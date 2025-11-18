@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../api/AuthContext.jsx';
 import { useProgress } from '../context/ProgressContext';
 import ProgressBar from '../components/common/ProgressBar';
 
