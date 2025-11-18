@@ -5,7 +5,7 @@ import VideoCard from './VideoCard';
  * PUBLIC_INTERFACE
  * VerticalFeed renders a vertical stack of videos.
  */
-export default function VerticalFeed({ items = [], onVideoEnd }) {
+export default function VerticalFeed({ items = [], onVideoEnd, onVideoPlay }) {
   /** This is a public function. */
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -14,6 +14,7 @@ export default function VerticalFeed({ items = [], onVideoEnd }) {
           key={v.id || v._id || v.videoId || v.url}
           src={v.url || v.src}
           title={v.title || 'Untitled'}
+          onPlay={() => onVideoPlay?.(v)}
           onEnded={() => onVideoEnd?.(v)}
         />
       ))}

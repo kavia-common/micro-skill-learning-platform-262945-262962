@@ -61,29 +61,36 @@ export default function QuizModal({ videoId, open, onClose }) {
         <div style={{ marginTop: 12 }}>
           {loading && <div className="loading">Loading questions...</div>}
           {error && <div style={{ color: '#DC2626', marginBottom: 8 }}>{error}</div>}
-          {!loading && !result && questions.map((q, idx) => (
-            <div key={q.id || idx} className="surface" style={{ padding: 12, marginBottom: 10 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                {idx + 1}. {q.text || q.question}
+          {!loading && !result && questions.map((q, idx) => {
+            const opts = (q.options || q.choices || []);
+            return (
+              <div key={q.id || idx} className="surface" style={{ padding: 12, marginBottom: 10 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                  {idx + 1}. {q.text || q.question}
+                </div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {opts.length === 0 ? (
+                    <div style={{ color: '#6B7280', fontSize: 13 }}>No options available</div>
+                  ) : opts.map((opt, i) => {
+                    const id = `${q.id || idx}-${i}`;
+                    const value = typeof opt === 'object' ? (opt.value ?? opt.id ?? `${i}`) : opt;
+                    const label = typeof opt === 'object' ? (opt.label ?? String(opt.value ?? 'Option')) : opt;
+                    return (
+                      <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input
+                          type="radio"
+                          name={`q-${q.id || idx}`}
+                          value={value}
+                          onChange={(e) => setAnswer(q.id || idx, e.target.value)}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-              <div style={{ display: 'grid', gap: 6 }}>
-                {(q.options || q.choices || []).map((opt, i) => {
-                  const id = `${q.id || idx}-${i}`;
-                  return (
-                    <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input
-                        type="radio"
-                        name={`q-${q.id || idx}`}
-                        value={typeof opt === 'object' ? opt.value : opt}
-                        onChange={(e) => setAnswer(q.id || idx, e.target.value)}
-                      />
-                      <span>{typeof opt === 'object' ? opt.label : opt}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {!loading && !result && questions.length > 0 && (
             <button className="btn" onClick={submit} disabled={submitting}>
@@ -96,6 +103,9 @@ export default function QuizModal({ videoId, open, onClose }) {
               <div style={{ fontWeight: 700, marginBottom: 6 }}>Your Score</div>
               <div style={{ fontSize: 32, color: '#1E3A8A', fontWeight: 800 }}>
                 {result.score ?? 0} / {result.total ?? questions.length}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 13, color: '#4B5563' }}>
+                You can close this window to continue.
               </div>
             </div>
           )}

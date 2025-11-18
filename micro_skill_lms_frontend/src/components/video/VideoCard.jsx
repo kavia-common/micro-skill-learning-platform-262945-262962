@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * PUBLIC_INTERFACE
  * VideoCard renders a vertical video that auto-plays/pauses using IntersectionObserver.
  */
-export default function VideoCard({ src, title, onEnded, muted = true, controls = false }) {
+export default function VideoCard({ src, title, onEnded, onPlay, muted = true, controls = false }) {
   /** This is a public function. */
   const videoRef = useRef(null);
   const [inView, setInView] = useState(false);
@@ -29,13 +29,15 @@ export default function VideoCard({ src, title, onEnded, muted = true, controls 
 
     if (inView) {
       const playPromise = v.play();
-      if (playPromise?.catch) {
-        playPromise.catch(() => { /* autoplay may be blocked */ });
+      if (playPromise?.then) {
+        playPromise.then(() => onPlay?.()).catch(() => { /* autoplay may be blocked */ });
+      } else {
+        onPlay?.();
       }
     } else {
       v.pause();
     }
-  }, [inView]);
+  }, [inView, onPlay]);
 
   return (
     <div className="video-card surface">
@@ -46,6 +48,7 @@ export default function VideoCard({ src, title, onEnded, muted = true, controls 
         muted={muted}
         controls={controls}
         preload="metadata"
+        onPlay={onPlay}
         onEnded={onEnded}
         aria-label={title}
       />

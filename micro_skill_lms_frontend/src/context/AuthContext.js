@@ -37,23 +37,35 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // PUBLIC_INTERFACE
   const login = async (email, password) => {
+    /** Login with backend, store token, and load current user. */
     const res = await client.post('/api/auth/login', { email, password });
-    if (res?.data?.token) {
-      localStorage.setItem('auth_token', res.data.token);
-      // fetch current user
-      const me = await client.get('/api/auth/me');
-      setUser(me.data);
+    const token = res?.data?.token;
+    const userFromLogin = res?.data?.user;
+    if (token) {
+      localStorage.setItem('auth_token', token);
+      if (userFromLogin) {
+        setUser(userFromLogin);
+      } else {
+        // fetch current user
+        const me = await client.get('/api/auth/me');
+        setUser(me.data);
+      }
     }
     return res?.data;
   };
 
+  // PUBLIC_INTERFACE
   const register = async (name, email, password) => {
+    /** Register a new user. */
     const res = await client.post('/api/auth/register', { name, email, password });
     return res?.data;
   };
 
+  // PUBLIC_INTERFACE
   const logout = () => {
+    /** Clear token and reset user. */
     localStorage.removeItem('auth_token');
     setUser(null);
   };

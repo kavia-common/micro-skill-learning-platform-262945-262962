@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import client from '../api/client';
 import VerticalFeed from '../components/video/VerticalFeed';
 import SummaryPanel from '../components/video/SummaryPanel';
@@ -14,21 +14,71 @@ export default function VideoFeedPage() {
   const [feed, setFeed] = useState([]);
   const [selected, setSelected] = useState(null);
   const [quizOpen, setQuizOpen] = useState(false);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loaderRef = useRef(null);
+
   const { summary, track } = useProgress();
 
+  const normalizeItems = (data) => {
+    if (Array.isArray(data)) return data;
+    return data?.items || [];
+  };
+
+  const fetchPage = useCallback(async (nextCursor = null) => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const qs = nextCursor ? `?cursor=${encodeURIComponent(nextCursor)}` : '';
+      const res = await client.get(`/api/feed${qs}`);
+      const items = normalizeItems(res.data);
+      const newCursor = res.data?.nextCursor ?? res.data?.cursor ?? null;
+      setFeed(prev => [...prev, ...items]);
+      if (!selected && items.length > 0) setSelected(items[0]);
+      setCursor(newCursor);
+      setHasMore(Boolean(newCursor) && items.length > 0);
+    } catch {
+      // fail closed
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, selected]);
+
   useEffect(() => {
-    let mounted = true;
-    client.get('/api/feed')
-      .then(res => {
-        const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-        if (mounted) {
-          setFeed(items);
-          setSelected(items[0]);
-        }
-      })
-      .catch(() => { /* ignore */ });
-    return () => { mounted = false; };
-  }, []);
+    // initial load
+    fetchPage(null);
+  }, [fetchPage]);
+
+  useEffect(() => {
+    // Infinite scroll with IntersectionObserver on a sentinel at the end
+    const el = loaderRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && hasMore && !loadingMore) {
+        fetchPage(cursor);
+      }
+    }, { rootMargin: '200px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [cursor, fetchPage, hasMore, loadingMore]);
+
+  const onVideoPlay = async (v) => {
+    // post a "started" tracking event once per view (best effort)
+    try {
+      await track({
+        videoId: v.id || v._id || v.videoId,
+        moduleId: v.moduleId,
+        status: 'started',
+        progress: 0
+      });
+    } catch {
+      // ignore
+    }
+    setSelected(v);
+  };
 
   const onVideoEnd = async (v) => {
     // mark completion for the video/module if applicable
@@ -39,9 +89,23 @@ export default function VideoFeedPage() {
       progress: 1
     });
     // select next
-    const idx = feed.findIndex(item => (item.id || item._id || item.videoId) === (v.id || v._id || v.videoId));
-    if (idx >= 0 && idx < feed.length - 1) {
-      setSelected(feed[idx + 1]);
+    const vid = v.id || v._id || v.videoId;
+    const idx = feed.findIndex(item => (item.id || item._id || item.videoId) === vid);
+    if (idx >= 0) {
+      if (idx < feed.length - 1) {
+        setSelected(feed[idx + 1]);
+      } else if (hasMore && cursor && !loadingMore) {
+        // attempt to load more and then select first new item
+        const beforeLen = feed.length;
+        await fetchPage(cursor);
+        setSelected((prev) => {
+          // if new items appended
+          if (feed.length > beforeLen) {
+            return feed[beforeLen];
+          }
+          return prev;
+        });
+      }
     }
   };
 
@@ -51,9 +115,16 @@ export default function VideoFeedPage() {
     <div className="feed-grid">
       <div>
         {feed.length === 0 ? (
-          <div className="surface centered" style={{ minHeight: 200 }}>No videos in feed</div>
+          <div className="surface centered" style={{ minHeight: 200 }}>
+            {loadingMore ? 'Loading feed...' : 'No videos in feed'}
+          </div>
         ) : (
-          <VerticalFeed items={feed} onVideoEnd={onVideoEnd} />
+          <>
+            <VerticalFeed items={feed} onVideoEnd={onVideoEnd} onVideoPlay={onVideoPlay} />
+            <div ref={loaderRef} className="centered" style={{ padding: 12, color: '#4B5563' }}>
+              {loadingMore ? 'Loading more...' : (hasMore ? 'Scroll to load more' : 'No more videos')}
+            </div>
+          </>
         )}
       </div>
       <div>
