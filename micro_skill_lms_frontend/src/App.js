@@ -1,49 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import './index.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProgressProvider } from './context/ProgressContext';
+import TopNav from './components/layout/TopNav';
+import Sidebar from './components/layout/Sidebar';
+import VideoFeedPage from './pages/VideoFeedPage';
+import LoginPage from './pages/LoginPage';
+import ModulePage from './pages/ModulePage';
+import ProfilePage from './pages/ProfilePage';
 
-// PUBLIC_INTERFACE
+/**
+ * PUBLIC_INTERFACE
+ * App component is the main entry that wires providers and routes.
+ */
 function App() {
-  const [theme, setTheme] = useState('light');
+  return (
+    <AuthProvider>
+      <ProgressProvider>
+        <Router>
+          <ShellLayout />
+        </Router>
+      </ProgressProvider>
+    </AuthProvider>
+  );
+}
 
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+/**
+ * ShellLayout sets the classic layout: top navigation + sidebar + main content.
+ * It also contains the route config for the application.
+ */
+function ShellLayout() {
+  const { user } = useAuth();
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-shell">
+      <TopNav />
+      <div className="app-body">
+        <Sidebar />
+        <main className="app-content" role="main" aria-live="polite">
+          <Routes>
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+            <Route path="/" element={<RequireAuth><VideoFeedPage /></RequireAuth>} />
+            <Route path="/modules/:moduleId" element={<RequireAuth><ModulePage /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+            <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * RequireAuth guards routes that need authentication.
+ */
+function RequireAuth({ children }) {
+  /** This is a public function.
+   * Guards nested route elements; redirects to /login if user is not authenticated.
+   */
+  const { user, loading } = useAuth();
+  if (loading) {
+    return <div className="centered loading">Loading...</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 export default App;
