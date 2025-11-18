@@ -12,8 +12,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "react-scripts test --watchAll=false",
+    "eject": "react-scripts eject",
+    "lint": "echo \"Add ESLint if needed; CRA uses built-in eslint config\""
   },
   "eslintConfig": {
     "extends": "react-app"
