@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import './index.css';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './api/AuthContext.jsx';
 import { ProgressProvider } from './context/ProgressContext';
 import TopNav from './components/layout/TopNav';
 import Sidebar from './components/layout/Sidebar';
@@ -61,7 +61,8 @@ function RequireAuth({ children }) {
   /** This is a public function.
    * Guards nested route elements; redirects to /login if user is not authenticated.
    */
-  const { user, loading } = useAuth();
+  const { user, session } = useAuth();
+  const loading = session === undefined;
   if (loading) {
     return <div className="centered loading">Loading...</div>;
   }

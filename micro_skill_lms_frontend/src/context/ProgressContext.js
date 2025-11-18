@@ -25,11 +25,10 @@ export function ProgressProvider({ children }) {
     try {
       const res = await client.get('/api/progress');
       if (res?.data) {
-        setSummary({
-          completed: res.data.completed ?? 0,
-          total: res.data.total ?? 0,
-          percent: res.data.percent ?? 0
-        });
+        const completed = res.data.completed ?? 0;
+        const total = res.data.total ?? 0;
+        const percent = res.data.percent ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
+        setSummary({ completed, total, percent });
       }
     } catch {
       // ignore for now
@@ -40,13 +39,12 @@ export function ProgressProvider({ children }) {
     try {
       const res = await client.get(`/api/progress/module/${moduleId}`);
       if (res?.data) {
+        const completed = res.data.completed ?? 0;
+        const total = res.data.total ?? 0;
+        const percent = res.data.percent ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
         setModuleProgress(prev => ({
           ...prev,
-          [moduleId]: {
-            completed: res.data.completed ?? 0,
-            total: res.data.total ?? 0,
-            percent: res.data.percent ?? 0
-          }
+          [moduleId]: { completed, total, percent }
         }));
       }
     } catch {
@@ -54,6 +52,12 @@ export function ProgressProvider({ children }) {
     }
   };
 
+  /**
+   * PUBLIC_INTERFACE
+   * track
+   * Posts a tracking event to backend.
+   * Expected payload: { moduleId, videoId, completed: boolean }
+   */
   const track = async (payload) => {
     try {
       await client.post('/api/progress/track', payload);

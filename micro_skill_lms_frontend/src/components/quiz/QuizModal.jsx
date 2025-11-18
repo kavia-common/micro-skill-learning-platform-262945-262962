@@ -5,7 +5,7 @@ import client from '../../api/client';
  * PUBLIC_INTERFACE
  * QuizModal fetches questions for a video and submits the attempt.
  */
-export default function QuizModal({ videoId, open, onClose }) {
+export default function QuizModal({ videoId, moduleId, open, onClose }) {
   /** This is a public function. */
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([]);
@@ -36,10 +36,18 @@ export default function QuizModal({ videoId, open, onClose }) {
     setSubmitting(true);
     setError('');
     try {
+      // Convert flat map {qid: value} to array answers per API spec
+      const answersArray = Object.entries(answers).map(([questionId, selected]) => ({
+        questionId,
+        selectedAnswerIds: Array.isArray(selected) ? selected : [selected]
+      }));
+
       const payload = {
         videoId,
-        answers
+        ...(moduleId ? { moduleId } : {}),
+        answers: answersArray
       };
+
       const res = await client.post('/api/quiz/attempts', payload);
       setResult(res?.data || { score: 0, total: questions.length });
     } catch {
@@ -63,8 +71,9 @@ export default function QuizModal({ videoId, open, onClose }) {
           {error && <div style={{ color: '#DC2626', marginBottom: 8 }}>{error}</div>}
           {!loading && !result && questions.map((q, idx) => {
             const opts = (q.options || q.choices || []);
+            const qid = q.id ?? String(idx);
             return (
-              <div key={q.id || idx} className="surface" style={{ padding: 12, marginBottom: 10 }}>
+              <div key={qid} className="surface" style={{ padding: 12, marginBottom: 10 }}>
                 <div style={{ fontWeight: 600, marginBottom: 8 }}>
                   {idx + 1}. {q.text || q.question}
                 </div>
@@ -72,16 +81,16 @@ export default function QuizModal({ videoId, open, onClose }) {
                   {opts.length === 0 ? (
                     <div style={{ color: '#6B7280', fontSize: 13 }}>No options available</div>
                   ) : opts.map((opt, i) => {
-                    const id = `${q.id || idx}-${i}`;
+                    const id = `${qid}-${i}`;
                     const value = typeof opt === 'object' ? (opt.value ?? opt.id ?? `${i}`) : opt;
                     const label = typeof opt === 'object' ? (opt.label ?? String(opt.value ?? 'Option')) : opt;
                     return (
                       <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input
                           type="radio"
-                          name={`q-${q.id || idx}`}
+                          name={`q-${qid}`}
                           value={value}
-                          onChange={(e) => setAnswer(q.id || idx, e.target.value)}
+                          onChange={(e) => setAnswer(qid, e.target.value)}
                         />
                         <span>{label}</span>
                       </label>

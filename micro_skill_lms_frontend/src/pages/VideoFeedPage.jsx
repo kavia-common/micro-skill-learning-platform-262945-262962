@@ -69,10 +69,9 @@ export default function VideoFeedPage() {
     // post a "started" tracking event once per view (best effort)
     try {
       await track({
-        videoId: v.id || v._id || v.videoId,
         moduleId: v.moduleId,
-        status: 'started',
-        progress: 0
+        videoId: v.id || v._id || v.videoId,
+        completed: false,
       });
     } catch {
       // ignore
@@ -83,10 +82,9 @@ export default function VideoFeedPage() {
   const onVideoEnd = async (v) => {
     // mark completion for the video/module if applicable
     await track({
-      videoId: v.id || v._id || v.videoId,
       moduleId: v.moduleId,
-      status: 'completed',
-      progress: 1
+      videoId: v.id || v._id || v.videoId,
+      completed: true,
     });
     // select next
     const vid = v.id || v._id || v.videoId;
@@ -110,6 +108,26 @@ export default function VideoFeedPage() {
   };
 
   const percent = useMemo(() => summary?.percent ?? 0, [summary]);
+
+  // Optionally fetch per-video details (summary) if not embedded
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDetails() {
+      if (!selected) return;
+      if (selected.description || selected.summary) return;
+      try {
+        const vid = selected.id || selected._id || selected.videoId;
+        const res = await client.get(`/api/videos/${vid}`);
+        if (!cancelled && res?.data) {
+          setSelected(s => ({ ...(s || {}), ...res.data }));
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadDetails();
+    return () => { cancelled = true; };
+  }, [selected]);
 
   return (
     <div className="feed-grid">
@@ -135,6 +153,7 @@ export default function VideoFeedPage() {
         open={quizOpen}
         onClose={() => setQuizOpen(false)}
         videoId={selected?.id || selected?._id || selected?.videoId}
+        moduleId={selected?.moduleId}
       />
     </div>
   );

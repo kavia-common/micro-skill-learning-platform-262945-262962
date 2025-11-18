@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../api/AuthContext.jsx';
 
 /**
  * PUBLIC_INTERFACE
@@ -8,11 +8,11 @@ import { useAuth } from '../../context/AuthContext';
  */
 export default function TopNav() {
   /** This is a public function. */
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 

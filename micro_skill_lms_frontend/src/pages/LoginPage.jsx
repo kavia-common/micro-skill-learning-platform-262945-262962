@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../api/AuthContext.jsx';
 
 /**
  * PUBLIC_INTERFACE
@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function LoginPage() {
   /** This is a public function. */
-  const { login, register } = useAuth();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -23,10 +23,12 @@ export default function LoginPage() {
     setError('');
     try {
       if (mode === 'login') {
-        await login(form.email, form.password);
+        await signIn({ email: form.email, password: form.password });
       } else {
-        await register(form.name, form.email, form.password);
-        await login(form.email, form.password);
+        await signUp({ email: form.email, password: form.password });
+        // Some projects require email verification; sign-in may not succeed immediately.
+        // Best effort login:
+        try { await signIn({ email: form.email, password: form.password }); } catch (_) {}
       }
       navigate('/');
     } catch (err) {
