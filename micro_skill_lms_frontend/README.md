@@ -11,7 +11,20 @@ This project provides a minimal React template with a clean, modern UI and minim
 
 ## Getting Started
 
-In the project directory, you can run:
+New routes:
+- / (Home Feed, infinite scroll)
+- /lesson/:id (Lesson Detail)
+- /quiz/:videoId (Quiz Page)
+- /progress (Progress Tracker)
+- /login (Login)
+- /signup (Signup)
+- /forgot-password (Forgot Password)
+- /profile (Profile)
+- /creator (Creator Upload)
+
+Environment variables:
+- See .env.example
+- Requires Supabase URL/Key and API base
 
 ### `npm start`
 

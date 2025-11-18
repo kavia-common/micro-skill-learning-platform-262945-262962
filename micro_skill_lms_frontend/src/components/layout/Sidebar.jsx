@@ -39,6 +39,8 @@ export default function Sidebar() {
       })}
       <div className="section-title" style={{ marginTop: 18 }}>Explore</div>
       <Link className="navlink" to="/" aria-label="Home Feed">Home Feed</Link>
+      <Link className="navlink" to="/progress" aria-label="Progress">Progress</Link>
+      <Link className="navlink" to="/creator" aria-label="Creator Upload">Creator Upload</Link>
     </aside>
   );
 }

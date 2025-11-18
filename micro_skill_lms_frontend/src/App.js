@@ -10,6 +10,12 @@ import VideoFeedPage from './pages/VideoFeedPage';
 import LoginPage from './pages/LoginPage';
 import ModulePage from './pages/ModulePage';
 import ProfilePage from './pages/ProfilePage';
+import LessonDetailPage from './pages/LessonDetailPage';
+import QuizPage from './pages/QuizPage';
+import ProgressPage from './pages/ProgressPage';
+import SignupPage from './pages/SignupPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import CreatorUploadPage from './pages/CreatorUploadPage';
 
 /**
  * PUBLIC_INTERFACE
@@ -42,9 +48,16 @@ function ShellLayout() {
         <main className="app-content" role="main" aria-live="polite">
           <Routes>
             <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+            <Route path="/signup" element={user ? <Navigate to="/" replace /> : <SignupPage />} />
+            <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
+
             <Route path="/" element={<RequireAuth><VideoFeedPage /></RequireAuth>} />
+            <Route path="/lesson/:id" element={<RequireAuth><LessonDetailPage /></RequireAuth>} />
+            <Route path="/quiz/:videoId" element={<RequireAuth><QuizPage /></RequireAuth>} />
+            <Route path="/progress" element={<RequireAuth><ProgressPage /></RequireAuth>} />
             <Route path="/modules/:moduleId" element={<RequireAuth><ModulePage /></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+            <Route path="/creator" element={<RequireAuth><CreatorUploadPage /></RequireAuth>} />
             <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
           </Routes>
         </main>

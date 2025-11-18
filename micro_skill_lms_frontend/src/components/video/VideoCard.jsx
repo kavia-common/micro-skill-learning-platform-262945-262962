@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * PUBLIC_INTERFACE
  * VideoCard renders a vertical video that auto-plays/pauses using IntersectionObserver.
  */
-export default function VideoCard({ src, title, onEnded, onPlay, muted = true, controls = false }) {
+export default function VideoCard({ src, title, onEnded, onPlay, muted = true, controls = false, id }) {
   /** This is a public function. */
   const videoRef = useRef(null);
   const [inView, setInView] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const el = videoRef.current;
@@ -53,7 +55,14 @@ export default function VideoCard({ src, title, onEnded, onPlay, muted = true, c
         aria-label={title}
       />
       <div className="meta">
-        <div style={{ fontWeight: 700 }}>{title}</div>
+        <button
+          type="button"
+          onClick={() => id && navigate(`/lesson/${id}`)}
+          style={{ background: 'transparent', color: '#fff', border: 0, padding: 0, fontWeight: 700, cursor: 'pointer' }}
+          aria-label={`Open lesson ${title}`}
+        >
+          {title}
+        </button>
       </div>
     </div>
   );

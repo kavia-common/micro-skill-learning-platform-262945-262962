@@ -20,17 +20,21 @@ export default function VerticalFeed({ items = [], onVideoEnd, onVideoPlay }) {
           {showControls ? 'Hide Controls' : 'Show Controls'}
         </button>
       </div>
-      {items.map(v => (
-        <VideoCard
-          key={v.id || v._id || v.videoId || v.url}
-          src={v.url || v.src}
-          title={v.title || 'Untitled'}
-          onPlay={() => onVideoPlay?.(v)}
-          onEnded={() => onVideoEnd?.(v)}
-          muted={muted}
-          controls={showControls}
-        />
-      ))}
+      {items.map(v => {
+        const id = v.id || v._id || v.videoId;
+        return (
+          <VideoCard
+            key={id || v.url}
+            id={id}
+            src={v.url || v.src}
+            title={v.title || 'Untitled'}
+            onPlay={() => onVideoPlay?.(v)}
+            onEnded={() => onVideoEnd?.(v)}
+            muted={muted}
+            controls={showControls}
+          />
+        );
+      })}
     </div>
   );
 }
