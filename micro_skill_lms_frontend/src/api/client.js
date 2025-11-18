@@ -1,35 +1,72 @@
+//
+// PUBLIC_INTERFACE
+// apiClient
+//   Axios instance configured with baseURL from REACT_APP_API_BASE and Authorization header from AuthContext token.
+//
 import axios from 'axios';
 
 /**
- * Axios API client configured with base URL and auth token from localStorage.
- * Order of precedence for base URL:
- * - REACT_APP_API_BASE
- * - REACT_APP_BACKEND_URL
- * - Fallback to same-origin ("")
+ * PUBLIC_INTERFACE
+ * createApiClient
+ * Creates an Axios instance with baseURL and interceptors to attach Bearer token.
+ * Consumers can import the default client or create a new one with a custom token getter.
+ *
+ * @param {() => string|null} [getToken] - Function returning the current JWT token (without "Bearer " prefix).
+ * @returns {import('axios').AxiosInstance} Configured axios instance.
  */
-const baseURL =
-  process.env.REACT_APP_API_BASE ||
-  process.env.REACT_APP_BACKEND_URL ||
-  '';
+export function createApiClient(getToken) {
+  const baseURL = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
 
-const client = axios.create({
-  baseURL,
-  withCredentials: false,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-});
+  const instance = axios.create({
+    baseURL,
+    withCredentials: true, // backend CORS allows credentials
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-// Attach auth token when present
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    // Ensure headers object exists
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
+  // Attach Authorization header if token exists
+  instance.interceptors.request.use((config) => {
+    try {
+      const token = typeof getToken === 'function' ? getToken() : null;
+      if (token) {
+        // eslint-disable-next-line no-param-reassign
+        config.headers = {
+          ...(config.headers || {}),
+          Authorization: `Bearer ${token}`,
+        };
+      } else if (config.headers && config.headers.Authorization) {
+        // ensure Authorization header is not lingering
+        delete config.headers.Authorization;
+      }
+    } catch {
+      // ignore token errors; proceed without auth header
+    }
+    return config;
+  });
+
+  return instance;
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * getDefaultApiClient
+ * Returns a singleton API client. You can pass a token getter later via setTokenGetter.
+ */
+let tokenGetter = null;
+let defaultClient = null;
+
+export function setTokenGetter(fn) {
+  tokenGetter = fn;
+  // Recreate client so new getter is used for subsequent calls
+  defaultClient = createApiClient(tokenGetter);
+}
+
+export function getDefaultApiClient() {
+  if (!defaultClient) {
+    defaultClient = createApiClient(tokenGetter);
   }
-  return config;
-});
+  return defaultClient;
+}
 
-export default client;
+export default getDefaultApiClient();
