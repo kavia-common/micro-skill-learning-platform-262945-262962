@@ -16,6 +16,7 @@ import ProgressPage from './pages/ProgressPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import CreatorUploadPage from './pages/CreatorUploadPage';
+import AuthCallbackPage from './pages/AuthCallbackPage.jsx';
 
 /**
  * PUBLIC_INTERFACE
@@ -47,6 +48,9 @@ function ShellLayout() {
         <Sidebar />
         <main className="app-content" role="main" aria-live="polite">
           <Routes>
+            {/* Public route for Supabase auth callback */}
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
             <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
             <Route path="/signup" element={user ? <Navigate to="/" replace /> : <SignupPage />} />
             <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
