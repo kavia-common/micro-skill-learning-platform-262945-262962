@@ -46,8 +46,9 @@ export default function QuizPage() {
       }));
       const res = await client.post('/api/quiz/attempts', { videoId, answers: answersArray });
       setResult(res?.data?.result || { score: 0, total: questions.length, percent: 0 });
-    } catch {
-      setError('Failed to submit attempt');
+    } catch (e) {
+      const msg = e?.response?.data?.error?.message || e?.message || 'Failed to submit attempt';
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -65,7 +66,8 @@ export default function QuizPage() {
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
               {questions.map((q, idx) => {
-                const opts = q.options || q.choices || q.answers || [];
+                // Backend uses 'answers: [{id, text}]'; fallback supported for older shapes
+                const opts = q.answers || q.options || q.choices || [];
                 const qid = q.id ?? String(idx);
                 return (
                   <div key={qid} className="surface" style={{ padding: 12 }}>
@@ -77,8 +79,8 @@ export default function QuizPage() {
                         <div style={{ color: '#6B7280', fontSize: 13 }}>No options</div>
                       ) : (
                         opts.map((opt, i) => {
-                          const value = typeof opt === 'object' ? (opt.value ?? opt.id ?? `${i}`) : opt;
-                          const label = typeof opt === 'object' ? (opt.label ?? String(opt.value ?? 'Option')) : opt;
+                          const value = typeof opt === 'object' ? (opt.id ?? opt.value ?? `${i}`) : opt;
+                          const label = typeof opt === 'object' ? (opt.text ?? opt.label ?? String(opt.value ?? 'Option')) : opt;
                           return (
                             <label key={`${qid}-${i}`} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                               <input

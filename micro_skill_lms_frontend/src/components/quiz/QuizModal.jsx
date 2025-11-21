@@ -49,9 +49,16 @@ export default function QuizModal({ videoId, moduleId, open, onClose }) {
       };
 
       const res = await client.post('/api/quiz/attempts', payload);
-      setResult(res?.data || { score: 0, total: questions.length });
-    } catch {
-      setError('Failed to submit attempt');
+      // Backend returns { attempt, result }, prefer result for display
+      const resultPayload = res?.data?.result || res?.data || { score: 0, total: questions.length };
+      setResult({
+        score: resultPayload.score ?? 0,
+        total: resultPayload.total ?? questions.length,
+        percent: typeof resultPayload.percent === 'number' ? resultPayload.percent : (resultPayload.total ? Math.round(((resultPayload.score ?? 0) / resultPayload.total) * 100) : 0),
+      });
+    } catch (e) {
+      const msg = e?.response?.data?.error?.message || e?.message || 'Failed to submit attempt';
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -70,7 +77,8 @@ export default function QuizModal({ videoId, moduleId, open, onClose }) {
           {loading && <div className="loading">Loading questions...</div>}
           {error && <div style={{ color: '#DC2626', marginBottom: 8 }}>{error}</div>}
           {!loading && !result && questions.map((q, idx) => {
-            const opts = (q.options || q.choices || []);
+            // Normalize options from backend: answers: [{id, text}]
+            const opts = (q.answers || q.options || q.choices || []);
             const qid = q.id ?? String(idx);
             return (
               <div key={qid} className="surface" style={{ padding: 12, marginBottom: 10 }}>
@@ -82,8 +90,8 @@ export default function QuizModal({ videoId, moduleId, open, onClose }) {
                     <div style={{ color: '#6B7280', fontSize: 13 }}>No options available</div>
                   ) : opts.map((opt, i) => {
                     const id = `${qid}-${i}`;
-                    const value = typeof opt === 'object' ? (opt.value ?? opt.id ?? `${i}`) : opt;
-                    const label = typeof opt === 'object' ? (opt.label ?? String(opt.value ?? 'Option')) : opt;
+                    const value = typeof opt === 'object' ? (opt.id ?? opt.value ?? `${i}`) : opt;
+                    const label = typeof opt === 'object' ? (opt.text ?? opt.label ?? String(opt.value ?? 'Option')) : opt;
                     return (
                       <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input
